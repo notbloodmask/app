@@ -7,6 +7,7 @@ responsibilities include loading the world on url change.
 import metaversefile from 'metaversefile';
 import WSRTC from 'wsrtc/wsrtc.js';
 import * as Z from 'zjs';
+import {Vircadia} from '@vircadia/web-sdk';
 
 import {appsMapName, partyMapName, initialPosY, playersMapName} from './constants.js';
 import {loadOverworld} from './overworld.js';
@@ -225,9 +226,10 @@ class Universe extends EventTarget {
   // Called by enterWorld() in universe.js.
   // This is called when a player enters a scene that has a Vircadia domain connection.
   async connectDomain(src, state = new Z.Doc()) {
-    console.debug("connectDomain()");
+    console.debug('connectDomain()');
 
     // TODO: Prepare for domain connection but don't connect until the application is loaded from the scene.
+    console.debug('Vircadia Web SDK:', Vircadia.version);
 
     // Load as single player for starters.
     this.connectState(state);
@@ -238,7 +240,7 @@ class Universe extends EventTarget {
 
   // Called by enterWorld() in universe.js, to make sure we aren't already connected.
   async disconnectDomain() {
-    console.debug("disconnectDomain()");
+    console.debug('disconnectDomain()');
 
     // TODO: Disconnect any current domain connection.
 

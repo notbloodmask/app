@@ -25,4 +25,7 @@ export default defineConfig({
       strict: true,
     },
   },
+  build: {
+    target: 'es2021',
+  }
 })
