@@ -226,8 +226,6 @@ class Universe extends EventTarget {
   // Called by enterWorld() in universe.js.
   // This is called when a player enters a scene that has a Vircadia domain connection.
   async connectDomain(src, state = new Z.Doc()) {
-    console.debug('connectDomain()');
-
     // Prepare for domain connection but don't connect until the application is loaded in the scene.
     domain.setUp();
 
@@ -242,8 +240,6 @@ class Universe extends EventTarget {
 
   // Called by enterWorld() in universe.js, to make sure we aren't already connected.
   async disconnectDomain() {
-    console.debug('disconnectDomain()');
-
     domain.tearDown();
   }
 

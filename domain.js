@@ -5,6 +5,7 @@ class Domain {
   constructor() {
     this._domainServer = null;
     this._contextID = null;
+    this._doTearDown = false;
   }
 
   setUp() {
@@ -13,16 +14,37 @@ class Domain {
       return;
     }
 
-    console.log('Vircadia Web SDK:', Vircadia.version);
     this._domainServer = new DomainServer();
     this._contextID = this._domainServer.contextID;
 
-    console.debug('Domain context ID:', this._contextID);
+    this._doTearDown = true;
+  }
+
+  connect(url) {
+    console.debug(`Connecting to domain:`, url);
+    this._domainServer.connect(url);
+
+    this._doTearDown = false;
+  }
+
+  disconnect() {
+    console.debug('Disconnecting from domain.');
+    this._domainServer.disconnect();
+
+    if (this._doTearDown) {
+      this._tearDownInternal();
+    }
   }
 
   tearDown() {
+    // Defer tear down until after disconnecting.
+    this._doTearDown = true;
+  }
+
+  _tearDownInternal() {
     this._domainServer = null;
     this._contextID = null;
+    this._doTearDown = false;
   }
 }
 

@@ -61,6 +61,7 @@ import * as instancing from './instancing.js';
 import * as atlasing from './atlasing.js';
 import ioManager from './io-manager.js';
 import {lightsManager} from './lights-manager.js';
+import {domain} from './domain.js';
 
 const localVector2D = new THREE.Vector2();
 
@@ -869,11 +870,8 @@ metaversefile.setApi({
       throw new Error('useResize cannot be called outside of render()');
     }
   },
-  connectDomain(url) {
-    console.debug("TODO connectDomain():", url);
-  },
-  disconnectDomain() {
-    console.debug("TODO disconnectDomain()");
+  useDomain() {
+    return domain;
   },
   getNextInstanceId() {
     return getRandomString();
