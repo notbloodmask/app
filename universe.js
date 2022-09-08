@@ -7,9 +7,9 @@ responsibilities include loading the world on url change.
 import metaversefile from 'metaversefile';
 import WSRTC from 'wsrtc/wsrtc.js';
 import * as Z from 'zjs';
-import {Vircadia} from '@vircadia/web-sdk';
 
 import {appsMapName, partyMapName, initialPosY, playersMapName} from './constants.js';
+import {domain} from './domain.js';
 import {loadOverworld} from './overworld.js';
 import {partyManager} from './party-manager.js';
 import physicsManager from './physics-manager.js';
@@ -228,22 +228,23 @@ class Universe extends EventTarget {
   async connectDomain(src, state = new Z.Doc()) {
     console.debug('connectDomain()');
 
-    // TODO: Prepare for domain connection but don't connect until the application is loaded from the scene.
-    console.debug('Vircadia Web SDK:', Vircadia.version);
+    // Prepare for domain connection but don't connect until the application is loaded in the scene.
+    domain.setUp();
 
     // Load as single player for starters.
     this.connectState(state);
     await metaversefile.createAppAsync({
       start_url: src,
     });
+
+    // TODO: Load as multiplayer.
   }
 
   // Called by enterWorld() in universe.js, to make sure we aren't already connected.
   async disconnectDomain() {
     console.debug('disconnectDomain()');
 
-    // TODO: Disconnect any current domain connection.
-
+    domain.tearDown();
   }
 
 }
