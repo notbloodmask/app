@@ -5,7 +5,7 @@ class Domain {
   constructor() {
     this._domainServer = null;
     this._contextID = null;
-    this._doTearDown = false;
+    this._url = null;
   }
 
   setUp() {
@@ -16,35 +16,36 @@ class Domain {
 
     this._domainServer = new DomainServer();
     this._contextID = this._domainServer.contextID;
+  }
 
-    this._doTearDown = true;
+  hasContext() {
+    return this._contextID !== null;
+  }
+
+  hasURL() {
+    return this._url !== null;
   }
 
   connect(url) {
-    console.debug(`Connecting to domain:`, url);
-    this._domainServer.connect(url);
-
-    this._doTearDown = false;
+    console.debug('Connecting to domain:', url);
+    this._url = url;
+    this._domainServer.connect(this._url);
   }
 
   disconnect() {
     console.debug('Disconnecting from domain.');
     this._domainServer.disconnect();
-
-    if (this._doTearDown) {
-      this._tearDownInternal();
-    }
+    this._url = null;
   }
 
   tearDown() {
-    // Defer tear down until after disconnecting.
-    this._doTearDown = true;
-  }
+    // tearDown() is called before the Vircadia application's useCleanup() so disconnect here.
+    if (this._domainServer) {
+      this.disconnect();
+    }
 
-  _tearDownInternal() {
     this._domainServer = null;
     this._contextID = null;
-    this._doTearDown = false;
   }
 }
 
