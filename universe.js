@@ -9,7 +9,6 @@ import WSRTC from 'wsrtc/wsrtc.js';
 import * as Z from 'zjs';
 
 import {appsMapName, partyMapName, initialPosY, playersMapName} from './constants.js';
-import {domain} from './domain.js';
 import {loadOverworld} from './overworld.js';
 import {partyManager} from './party-manager.js';
 import physicsManager from './physics-manager.js';
@@ -18,6 +17,7 @@ import physx from './physx.js';
 import {playersManager} from './players-manager.js';
 import sceneNames from './scenes/scenes.json';
 import {parseQuery} from './util.js';
+import Domain from './vircadia/Domain.js';
 import {world} from './world.js';
 
 const physicsScene = physicsManager.getScene();
@@ -26,6 +26,7 @@ class Universe extends EventTarget {
   constructor() {
     super();
     this.wsrtc = null;
+    this.domain = null;
 
     this.currentWorld = null;
     this.sceneLoadedPromise = null;
@@ -142,6 +143,8 @@ class Universe extends EventTarget {
 
   getConnection() { return this.wsrtc; }
 
+  getDomain() { return this.domain; }
+
   // called by enterWorld() in universe.js
   // This is called in single player mode instead of connectRoom
   connectState(state) {
@@ -227,7 +230,7 @@ class Universe extends EventTarget {
   // This is called when a player enters a scene that has a Vircadia domain connection.
   async connectDomain(src, state = new Z.Doc()) {
     // Prepare for domain connection but don't connect until the application is loaded in the scene.
-    domain.setUp();
+    this.domain = new Domain();
 
     // Load as single player for starters.
     this.connectState(state);
@@ -240,7 +243,10 @@ class Universe extends EventTarget {
 
   // Called by enterWorld() in universe.js, to make sure we aren't already connected.
   async disconnectDomain() {
-    domain.tearDown();
+    if (this.domain) {
+      this.domain.close();
+    }
+    this.domain = null;
   }
 
 }

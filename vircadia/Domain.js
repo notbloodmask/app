@@ -3,23 +3,9 @@ import {Vircadia, DomainServer} from '@vircadia/web-sdk';
 // Manages the use of a Vircadia domain for domain multiplayer.
 class Domain {
   constructor() {
-    this._domainServer = null;
-    this._contextID = null;
-    this._url = null;
-  }
-
-  setUp() {
-    if (this._domainServer !== null) {
-      // Is already set up.
-      return;
-    }
-
     this._domainServer = new DomainServer();
     this._contextID = this._domainServer.contextID;
-  }
-
-  hasContext() {
-    return this._contextID !== null;
+    this._url = null;
   }
 
   hasURL() {
@@ -38,8 +24,8 @@ class Domain {
     this._url = null;
   }
 
-  tearDown() {
-    // tearDown() is called before the Vircadia application's useCleanup() so disconnect here.
+  close() {
+    // close() is called before the Vircadia application's useCleanup() so disconnect here.
     if (this._domainServer) {
       this.disconnect();
     }
@@ -49,4 +35,4 @@ class Domain {
   }
 }
 
-export const domain = new Domain();
+export default Domain;

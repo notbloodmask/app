@@ -60,7 +60,6 @@ import * as instancing from './instancing.js';
 import * as atlasing from './atlasing.js';
 import ioManager from './io-manager.js';
 import {lightsManager} from './lights-manager.js';
-import {domain} from './domain.js';
 
 const localVector2D = new THREE.Vector2();
 
@@ -870,7 +869,7 @@ metaversefile.setApi({
     }
   },
   useDomain() {
-    return domain;
+    return universe.getDomain();
   },
   getNextInstanceId() {
     return getRandomString();
