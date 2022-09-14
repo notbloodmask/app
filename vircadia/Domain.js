@@ -1,5 +1,7 @@
 import {DomainServer, Camera, AvatarMixer, AudioMixer} from '@vircadia/web-sdk';
 
+import {playersManager} from '../players-manager.js';
+
 // Manages the use of a Vircadia domain for domain multiplayer.
 class Domain {
   constructor() {
@@ -8,7 +10,10 @@ class Domain {
     this._url = null;
 
     this._camera = new Camera(this._contextID);
+
     this._avatarMixer = new AvatarMixer(this._contextID);
+    this._myAvatar = this._avatarMixer.myAvatar;
+
     this._audioMixer = new AudioMixer(this._contextID);
     this._audioMixer.audioWorkletRelativePath = './bin/';
     this._audioMixer.positionGetter = () => {
@@ -47,7 +52,16 @@ class Domain {
   update(timestamp) {
     // This method is called each render frame but we don't need to update the domain at that rate.
     if (timestamp - this._lastUpdate >= this._TARGET_GAME_LOOP_INTERVAL) {
+      const localPlayer = playersManager.getLocalPlayer();
+
+      const playerQuat = localPlayer.quaternion;
+
+      this._camera.position = localPlayer.position;
+      this._camera.orientation = {x: playerQuat.x, y: playerQuat.y, z: playerQuat.z, w: playerQuat.w};
       this._camera.update();
+
+      this._myAvatar.position = localPlayer.position;
+      this._myAvatar.orientation = {x: playerQuat.x, y: playerQuat.y, z: playerQuat.z, w: playerQuat.w};
       this._avatarMixer.update();
 
       this._lastUpdate = timestamp;

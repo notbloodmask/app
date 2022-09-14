@@ -332,13 +332,13 @@ export default class Webaverse extends EventTarget {
           cameraManager.updatePost(timestamp, timeDiffCapped);
           ioManager.updatePost();
 
+          game.pushAppUpdates();
+          game.pushPlayerUpdates();
+
           const domain = universe.getDomain();
           if (domain) {
             domain.update(timestamp);
           }
-
-          game.pushAppUpdates();
-          game.pushPlayerUpdates();
 
           const session = renderer.xr.getSession();
           const xrCamera = session ? renderer.xr.getCamera(camera) : camera;
