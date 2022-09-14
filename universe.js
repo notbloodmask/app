@@ -18,6 +18,7 @@ import {playersManager} from './players-manager.js';
 import sceneNames from './scenes/scenes.json';
 import {parseQuery} from './util.js';
 import Domain from './vircadia/Domain.js';
+import voiceInput from './voice-input/voice-input';
 import {world} from './world.js';
 
 const physicsScene = physicsManager.getScene();
@@ -231,6 +232,10 @@ class Universe extends EventTarget {
   async connectDomain(src, state = new Z.Doc()) {
     // Prepare for domain connection but don't connect until the application is loaded in the scene.
     this.domain = new Domain();
+
+    if (voiceInput.micEnabled()) {
+      voiceInput.enableMic();
+    }
 
     // Load as single player for starters.
     this.connectState(state);

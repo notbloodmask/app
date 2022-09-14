@@ -38,11 +38,10 @@ class Domain {
 
   enableMic(mediaStream) {
     this._audioMixer.audioInput = mediaStream;
-    this._audioMixer.inputMuted = false;
   }
 
   disableMic() {
-    this._audioMixer.inputMuted = true;
+    this._audioMixer.audioInput = null;
   }
 
   update(timestamp) {
