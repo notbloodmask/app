@@ -21,8 +21,11 @@ class VoiceInput extends EventTarget {
     const localPlayer = metaversefile.useLocalPlayer();
     localPlayer.setMicMediaStream(this.mediaStream);
 
+    const domain = universe.getDomain();
     const wsrtc = universe.getConnection();
-    if (wsrtc) {
+    if (domain) {
+      domain.enableMic(this.mediaStream);
+    } else if (wsrtc) {
       wsrtc.enableMic(this.mediaStream);
     }
 
@@ -34,8 +37,11 @@ class VoiceInput extends EventTarget {
   }
   disableMic() {
     /* if (this.micEnabled()) */ {
+      const domain = universe.getDomain();
       const wsrtc = universe.getConnection();
-      if (wsrtc) {
+      if (domain) {
+        domain.disableMic();
+      } else if (wsrtc) {
         wsrtc.disableMic();
       } else {
         WSRTC.destroyUserMedia(this.mediaStream);
