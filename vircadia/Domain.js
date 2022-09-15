@@ -20,6 +20,9 @@ class Domain {
     this._audioMixer.positionGetter = () => {
       return this._avatarMixer.myAvatar.position;
     };
+    this._audioMixer.orientationGetter = () => {
+      return this._avatarMixer.myAvatar.orientation;
+    };
     this._audioMixer.onStateChanged = (state) => {
       this._onAudioMixerStateChanged(state);
     }
