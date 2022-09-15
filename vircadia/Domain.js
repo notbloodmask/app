@@ -1,5 +1,6 @@
 import {DomainServer, Camera, AvatarMixer, AudioMixer} from '@vircadia/web-sdk';
 
+import audioManager from '../audio-manager.js';
 import {playersManager} from '../players-manager.js';
 
 // Manages the use of a Vircadia domain for domain multiplayer.
@@ -19,6 +20,12 @@ class Domain {
     this._audioMixer.positionGetter = () => {
       return this._avatarMixer.myAvatar.position;
     };
+    this._audioMixer.onStateChanged = (state) => {
+      this._onAudioMixerStateChanged(state);
+    }
+
+    this._audioContext = null;
+    this._audioOutputSource = null;
 
     this._TARGET_GAME_LOOP_FPS = 20;
     this._TARGET_GAME_LOOP_INTERVAL = 1000 / this._TARGET_GAME_LOOP_FPS; // ms
@@ -38,6 +45,7 @@ class Domain {
   disconnect() {
     console.debug('Disconnecting from domain.');
     this._domainServer.disconnect();
+    this._disconnectAudioOutput();
     this._url = null;
   }
 
@@ -79,6 +87,33 @@ class Domain {
     this._camera = null;
     this._domainServer = null;
     this._contextID = null;
+  }
+
+  _onAudioMixerStateChanged(state) {
+    if (state === AudioMixer.CONNECTED) {
+      // Wire up audio output.
+      this._connectAudioOutput();
+      this._audioMixer.onStateChanged = null;
+    }
+  }
+
+  _connectAudioOutput() {
+    this._audioContext = audioManager.getAudioContext();
+    this._audioOutputSource = this._audioContext.createMediaStreamSource(this._audioMixer.audioOutput);
+    this._audioOutputSource.connect(this._audioContext.destination);
+    this._audioMixer.play();
+  }
+
+  _disconnectAudioOutput() {
+    this._audioMixer.pause();
+    this._audioMixer.audioInput = null;
+    this._audioMixer.positionGetter = null;
+    if (this._audioOutputSource) {
+      this._audioOutputSource.disconnect();
+    }
+    if (this._audioContext) {
+      this._audioContext = null;
+    }
   }
 }
 
