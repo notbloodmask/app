@@ -1,11 +1,17 @@
 import {DomainServer, Camera, AvatarMixer, AudioMixer} from '@vircadia/web-sdk';
+import * as Z from 'zjs';
 
 import audioManager from '../audio-manager.js';
+import {characterSelectManager} from '../characterselect-manager.js';
+import {actionsMapName, appsMapName, playersMapName} from '../constants.js';
 import {playersManager} from '../players-manager.js';
+import {makeId} from '../util.js';
 
 // Manages the use of a Vircadia domain for domain multiplayer.
 class Domain {
-  constructor() {
+  constructor(state) {
+    this.state = state;
+
     this._domainServer = new DomainServer();
     this._contextID = this._domainServer.contextID;
     this._url = null;
@@ -14,6 +20,10 @@ class Domain {
 
     this._avatarMixer = new AvatarMixer(this._contextID);
     this._myAvatar = this._avatarMixer.myAvatar;
+    this._avatarList = this._avatarMixer.avatarList;
+    this._avatarList.avatarAdded.connect((id) => {
+      this._onAvatarAdded(id);
+    });
 
     this._audioMixer = new AudioMixer(this._contextID);
     this._audioMixer.audioWorkletRelativePath = './bin/';
@@ -29,6 +39,8 @@ class Domain {
 
     this._audioContext = null;
     this._audioOutputSource = null;
+
+    this._avatarIDs = new Map(); // Vircadia user sssion UUID to Webaverse player ID.
 
     this._TARGET_GAME_LOOP_FPS = 20;
     this._TARGET_GAME_LOOP_INTERVAL = 1000 / this._TARGET_GAME_LOOP_FPS; // ms
@@ -117,6 +129,41 @@ class Domain {
     if (this._audioContext) {
       this._audioContext = null;
     }
+  }
+
+  async _onAvatarAdded(uuid) {
+
+    const playerId = makeId(5);
+    this._avatarIDs.set(uuid, playerId);
+
+    const defaultPlayerSpec = await characterSelectManager.getDefaultSpecAsync();
+    const defaultTransform = new Float32Array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1]);
+
+    this.playersArray = this.state.getArray(playersMapName);
+    this.playersArray.doc.transact(() => {
+      const playerMap = new Z.Map();
+      playerMap.set('playerId', playerId);
+
+      const appId = makeId(5);
+      const appsArray = new Z.Array();
+      const avatarApp = {
+        instanceId: appId,
+        contentId: defaultPlayerSpec.avatarUrl,
+        transform: defaultTransform,
+        components: []
+      };
+      appsArray.push([avatarApp]);
+      playerMap.set(appsMapName, appsArray);
+
+      const actionsArray = new Z.Array();
+      // TODO: Add landAction to actionsArray?
+      playerMap.set(actionsMapName, actionsArray);
+
+      playerMap.set('avatar', appId);
+      // TODO: Add voiceSpec to playerMap?
+
+      this.playersArray.push([playerMap]);
+    });
   }
 }
 

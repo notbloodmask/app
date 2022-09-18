@@ -228,22 +228,41 @@ class Universe extends EventTarget {
   }
 
   // Called by enterWorld() in universe.js.
-  // This is called when a player enters a scene that has a Vircadia domain connection.
+  // This is called when a player enters a scene that is named as having a Vircadia domain connection.
   async connectDomain(src, state = new Z.Doc()) {
     // Prepare for domain connection but don't connect until the application is loaded in the scene.
-    this.domain = new Domain();
+    this.state = state;
+    state.setResolvePriority(1);
 
+    // Players cannot be initialized until the physx worker is loaded.
+    await physx.waitForLoad();
+    await physxWorkerManager.waitForLoad();
+
+    // Clear remote players.
+    playersManager.clearRemotePlayers();
+    playersManager.bindState(state.getArray(playersMapName));
+
+    // Clear the world state.
+    world.appManager.unbindState();
+    world.appManager.clear();;
+    const appsArray = state.get(appsMapName, Z.Array);
+    world.appManager.bindState(appsArray);
+
+    const localPlayer = playersManager.getLocalPlayer();
+    localPlayer.bindState(state.getArray(playersMapName));
+
+    // Create a new instance of the domain. Connection is initiated when the Vircadia application in the scene is loaded.
+    this.domain = new Domain(state);
+
+    // Re-enable the mic if the mic is already enabled.
     if (voiceInput.micEnabled()) {
       voiceInput.enableMic();
     }
 
-    // Load as single player for starters.
-    this.connectState(state);
+    // Load the scene so that the Vircadia domain connection specified in the scene is opened.
     await metaversefile.createAppAsync({
       start_url: src,
     });
-
-    // TODO: Load as multiplayer.
   }
 
   // Called by enterWorld() in universe.js, to make sure we aren't already connected.

@@ -1431,9 +1431,11 @@ class RemotePlayer extends InterpolatedPlayer {
     this.unbindFns.push(this.playerMap.unobserve.bind(this.playerMap, observePlayerFn));
     this.appManager.bindState(this.getAppsState());
     this.appManager.loadApps().then(() => {
-      if(!this.voicer || !this.voiceEndpoint){
-        let voiceSpec = JSON.parse(this.playerMap.get('voiceSpec'));
-        this.loadVoiceEndpoint(voiceSpec.endpointUrl);
+      if (!this.voicer || !this.voiceEndpoint) {
+        if (this.playerMap.get('voiceSpec') !== undefined) {
+          let voiceSpec = JSON.parse(this.playerMap.get('voiceSpec'));
+          this.loadVoiceEndpoint(voiceSpec.endpointUrl);
+        }
       }
       this.syncAvatar();
     });
