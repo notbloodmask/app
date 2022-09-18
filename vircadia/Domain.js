@@ -24,6 +24,9 @@ class Domain {
     this._avatarList.avatarAdded.connect((id) => {
       this._onAvatarAdded(id);
     });
+    this._avatarList.avatarRemoved.connect((id) => {
+      this._onAvatarRemoved(id);
+    });
 
     this._audioMixer = new AudioMixer(this._contextID);
     this._audioMixer.audioWorkletRelativePath = './bin/';
@@ -164,6 +167,22 @@ class Domain {
 
       this.playersArray.push([playerMap]);
     });
+  }
+
+  _onAvatarRemoved(uuid) {
+    const playerId = this._avatarIDs.get(uuid);
+    if (playerId) {
+      const playersArray = this.state.getArray(playersMapName);
+      playersArray.doc.transact(() => {
+        for (let i = 0; i < playersArray.length; i++) {
+          const playerMap = playersArray.get(i, Z.Map);
+          if (playerMap.get('playerId') === playerId) {
+            playersArray.delete(i);
+            break;
+          }
+        }
+      });
+    }
   }
 }
 
