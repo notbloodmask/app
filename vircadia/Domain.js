@@ -21,10 +21,10 @@ class Domain {
     this._avatarMixer = new AvatarMixer(this._contextID);
     this._myAvatar = this._avatarMixer.myAvatar;
     this._avatarList = this._avatarMixer.avatarList;
-    this._avatarList.avatarAdded.connect((id) => {
+    this._avatarList.avatarAdded.connect(id => {
       this._onAvatarAdded(id);
     });
-    this._avatarList.avatarRemoved.connect((id) => {
+    this._avatarList.avatarRemoved.connect(id => {
       this._onAvatarRemoved(id);
     });
 
@@ -36,14 +36,14 @@ class Domain {
     this._audioMixer.orientationGetter = () => {
       return this._avatarMixer.myAvatar.orientation;
     };
-    this._audioMixer.onStateChanged = (state) => {
+    this._audioMixer.onStateChanged = state => {
       this._onAudioMixerStateChanged(state);
     }
 
     this._audioContext = null;
     this._audioOutputSource = null;
 
-    this._avatarIDs = new Map(); // Vircadia user session UUID to Webaverse player ID.
+    this._avatarIDs = new Map(); // Map Vircadia user session UUID to Webaverse player ID.
     this._remotePlayersToScriptAvatar = new Map();
 
     this._TARGET_GAME_LOOP_FPS = 30;
@@ -156,7 +156,7 @@ class Domain {
         instanceId: appId,
         contentId: defaultPlayerSpec.avatarUrl,
         transform: defaultTransform,
-        components: []
+        components: [],
       };
       appsArray.push([avatarApp]);
       playerMap.set(appsMapName, appsArray);
