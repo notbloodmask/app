@@ -43,9 +43,10 @@ class Domain {
     this._audioContext = null;
     this._audioOutputSource = null;
 
-    this._avatarIDs = new Map(); // Vircadia user sssion UUID to Webaverse player ID.
+    this._avatarIDs = new Map(); // Vircadia user session UUID to Webaverse player ID.
+    this._remotePlayersToScriptAvatar = new Map();
 
-    this._TARGET_GAME_LOOP_FPS = 20;
+    this._TARGET_GAME_LOOP_FPS = 30;
     this._TARGET_GAME_LOOP_INTERVAL = 1000 / this._TARGET_GAME_LOOP_FPS; // ms
     this._lastUpdate = 0;
   }
@@ -89,6 +90,8 @@ class Domain {
       this._myAvatar.position = localPlayer.position;
       this._myAvatar.orientation = {x: playerQuat.x, y: playerQuat.y, z: playerQuat.z, w: playerQuat.w};
       this._avatarMixer.update();
+
+      this._updateRemotePlayers();
 
       this._lastUpdate = timestamp;
     }
@@ -135,15 +138,15 @@ class Domain {
   }
 
   async _onAvatarAdded(uuid) {
-
     const playerId = makeId(5);
     this._avatarIDs.set(uuid, playerId);
+    this._remotePlayersToScriptAvatar.set(playerId, this._avatarList.getAvatar(uuid));
 
     const defaultPlayerSpec = await characterSelectManager.getDefaultSpecAsync();
     const defaultTransform = new Float32Array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1]);
 
-    this.playersArray = this.state.getArray(playersMapName);
-    this.playersArray.doc.transact(() => {
+    const playersArray = this.state.getArray(playersMapName);
+    playersArray.doc.transact(() => {
       const playerMap = new Z.Map();
       playerMap.set('playerId', playerId);
 
@@ -165,7 +168,7 @@ class Domain {
       playerMap.set('avatar', appId);
       // TODO: Add voiceSpec to playerMap?
 
-      this.playersArray.push([playerMap]);
+      playersArray.push([playerMap]);
     });
   }
 
@@ -182,6 +185,30 @@ class Domain {
           }
         }
       });
+    }
+  }
+
+  _updateRemotePlayers() {
+    // Update positions of all remote players.
+    const remotePlayers = playersManager.getRemotePlayers();
+    for (const [playerId, remotePlayer] of remotePlayers) {
+      const scriptAvatar = this._remotePlayersToScriptAvatar.get(playerId);
+      const position = scriptAvatar.position;
+      const orientation = scriptAvatar.orientation;
+
+      // Name label.
+      remotePlayer.position.x = position.x;
+      remotePlayer.position.y = position.y;
+      remotePlayer.position.z = position.z;
+
+      // Avatar.
+      remotePlayer.avatarBinding.position.x = position.x;
+      remotePlayer.avatarBinding.position.y = position.y;
+      remotePlayer.avatarBinding.position.z = position.z;
+      remotePlayer.avatarBinding.quaternion.x = orientation.x;
+      remotePlayer.avatarBinding.quaternion.y = orientation.y;
+      remotePlayer.avatarBinding.quaternion.z = orientation.z;
+      remotePlayer.avatarBinding.quaternion.w = orientation.w;
     }
   }
 }
