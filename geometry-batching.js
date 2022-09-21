@@ -157,7 +157,7 @@ export class DrawCallBinding {
   }
 }
 
-const _swapTextureAttributes = (texture, i, j, maxInstancesPerDrawCall) => {
+/* const _swapTextureAttributes = (texture, i, j, maxInstancesPerDrawCall) => {
   const {itemSize} = texture;
   const startOffset = i * maxInstancesPerDrawCall;
   const dstStart = (startOffset + j) * itemSize;
@@ -186,28 +186,29 @@ const _swapBoundingDataBox = (instanceBoundingData, i, j, maxInstancesPerDrawCal
     srcStart,
     srcStart + 6
   );
-};
+}; */
 export class InstancedGeometryAllocator {
-  constructor(geometries, instanceTextureSpecs, {
-    maxInstancesPerDrawCall,
+  constructor(instanceTextureSpecs, {
+    maxNumGeometries,
+    maxInstancesPerGeometryPerDrawCall,
     maxDrawCallsPerGeometry,
-    maxSlotsPerGeometry,
     boundingType = null,
-    instanceBoundingType = null,
+    // instanceBoundingType = null,
   }) {
-    this.maxInstancesPerDrawCall = maxInstancesPerDrawCall;
+    this.maxNumGeometries = maxNumGeometries;
+    this.maxInstancesPerGeometryPerDrawCall = maxInstancesPerGeometryPerDrawCall;
     this.maxDrawCallsPerGeometry = maxDrawCallsPerGeometry;
     this.boundingType = boundingType;
-    this.instanceBoundingType = instanceBoundingType;
+    // this.instanceBoundingType = instanceBoundingType;
     
-    this.drawStarts = new Int32Array(geometries.length * maxDrawCallsPerGeometry);
-    this.drawCounts = new Int32Array(geometries.length * maxDrawCallsPerGeometry);
-    this.drawInstanceCounts = new Int32Array(geometries.length * maxDrawCallsPerGeometry);
+    this.drawStarts = new Int32Array(maxNumGeometries * maxDrawCallsPerGeometry);
+    this.drawCounts = new Int32Array(maxNumGeometries * maxDrawCallsPerGeometry);
+    this.drawInstanceCounts = new Int32Array(maxNumGeometries * maxDrawCallsPerGeometry);
     
     const boundingSize = getBoundingSize(boundingType);
-    this.boundingData = new Float32Array(geometries.length * maxDrawCallsPerGeometry * boundingSize);
-    const instanceBoundingSize = getBoundingSize(instanceBoundingType);
-    this.instanceBoundingData = new Float32Array(geometries.length * maxDrawCallsPerGeometry * maxInstancesPerDrawCall * instanceBoundingSize);
+    this.boundingData = new Float32Array(maxNumGeometries * maxDrawCallsPerGeometry * boundingSize);
+    // const instanceBoundingSize = getBoundingSize(instanceBoundingType);
+    // this.instanceBoundingData = new Float32Array(geometries.length * maxDrawCallsPerGeometry * maxInstancesPerGeometryPerDrawCall * instanceBoundingSize);
  
     this.testBoundingFn = (() => {
       if (this.boundingType === 'sphere') {
@@ -226,7 +227,7 @@ export class InstancedGeometryAllocator {
         return null;
       }
     })();
-    this.swapBoundingDataFn = (() => {
+    /* this.swapBoundingDataFn = (() => {
       if (this.boundingType === 'sphere') {
         return _swapBoundingDataSphere;
       } else if (this.boundingType === 'box') {
@@ -255,54 +256,35 @@ export class InstancedGeometryAllocator {
         // throw new Error('Invalid bounding type: ' + this.boundingType);
         return null;
       }
-    })();
+    })(); */
 
     {
-      const numGeometries = geometries.length;
-      const geometryRegistry = Array(numGeometries);
-      let positionIndex = 0;
-      let indexIndex = 0;
-      for (let i = 0; i < numGeometries; i++) {
-        const geometry = geometries[i];
-
-        const positionCount = geometry.attributes.position.count;
-        const indexCount = geometry.index.count;
-        const spec = {
-          position: {
-            start: positionIndex,
-            count: positionCount,
-          },
-          index: {
-            start: indexIndex,
-            count: indexCount,
-          },
-        };
-        geometryRegistry[i] = spec;
-
-        positionIndex += positionCount;
-        indexIndex += indexCount;
-      }
-      this.geometryRegistry = geometryRegistry;
-
-      this.geometry = BufferGeometryUtils.mergeBufferGeometries(geometries);
+      this.geometry = null;
+      this.geometryRegistry = new Map();
 
       this.texturesArray = instanceTextureSpecs.map(spec => {
-        const {
+        let {
           name,
           Type,
-          itemSize,
-          instanced = true
+          itemSize, // note: overridden to >= 4
+          // instanced = true
         } = spec;
 
         // compute the minimum size of a texture that can hold the data
 
-        let itemCount = numGeometries * maxDrawCallsPerGeometry * maxInstancesPerDrawCall;
-        if ( !instanced ) {
+        let itemCount = maxNumGeometries * maxDrawCallsPerGeometry * maxInstancesPerGeometryPerDrawCall;
+        /* if (!instanced) {
           itemCount = maxSlotsPerGeometry * numGeometries;
-        }
+        } */
+        // let itemCount = maxDrawCalls * maxInstancesPerDrawCall;
+        /* if (isNaN(itemCount)) {
+          debugger;
+        } */
         let neededItems4 = itemCount;
         if (itemSize > 4) {
           neededItems4 *= itemSize / 4;
+        } else {
+          itemSize = 4;
         }
         const textureSizePx = Math.min(Math.max(Math.pow(2, Math.ceil(Math.log2(Math.sqrt(neededItems4)))), 16), 2048);
         const itemSizeSnap = itemSize > 4 ? 4 : itemSize;
@@ -362,14 +344,102 @@ export class InstancedGeometryAllocator {
         this.textureIndexes[name] = i;
       }
 
-      this.freeList = new FreeList(numGeometries * maxDrawCallsPerGeometry);
+      this.freeList = new FreeList(maxNumGeometries * maxDrawCallsPerGeometry);
     }
   }
-  allocDrawCall(geometryIndex, boundingObject) {
+  setGeometries(geometries) {
+    const geometry = new THREE.BufferGeometry();
+
+    // attributes
+    const attributeSpecs = [
+      {
+        name: 'position',
+        itemSize: 3,
+      },
+      {
+        name: 'normal',
+        itemSize: 3,
+      },
+      {
+        name: 'uv',
+        itemSize: 2,
+      },
+    ];
+    for (let i = 0; i < attributeSpecs.length; i++) {
+      const attributeSpec = attributeSpecs[i];
+      const {
+        name,
+        itemSize,
+      } = attributeSpec;
+
+      let sum = 0;
+      for (let i = 0; i < geometries.length; i++) {
+        const lodGeometries = geometries[i];
+        const lod0Geometry = lodGeometries[0];
+        const attribute = lod0Geometry.attributes[name];
+        sum += attribute.array.length;
+      }
+
+      const array = new Float32Array(sum);
+      let index = 0;
+      for (let i = 0; i < geometries.length; i++) {
+        const lodGeometries = geometries[i];
+        const lod0Geometry = lodGeometries[0];
+        const attribute = lod0Geometry.attributes[name];
+        array.set(attribute.array, index);
+        index += attribute.array.length;
+      }
+      geometry.setAttribute(name, new THREE.BufferAttribute(array, itemSize));
+    }
+
+    // indices
+    {
+      let sum = 0;
+      for (let i = 0; i < geometries.length; i++) {
+        const lodGeometries = geometries[i];
+        for (let j = 0; j < lodGeometries.length; j++) {
+          const lodGeometry = lodGeometries[j];
+          sum += lodGeometry.index.array.length;
+        }
+      }
+
+      const index = new Uint32Array(sum);
+      let positionIndex = 0;
+      let indexIndex = 0;
+      for (let i = 0; i < geometries.length; i++) {
+        const lodGeometries = geometries[i];
+
+        const geometryRegistryArray = Array(lodGeometries.length);
+        for (let j = 0; j < lodGeometries.length; j++) {
+          const lodGeometry = lodGeometries[j];
+          geometryRegistryArray[j] = {
+            index: {
+              start: indexIndex,
+              count: lodGeometry.index.array.length,
+            },
+          };
+          for (let k = 0; k < lodGeometry.index.array.length; k++) {
+            index[indexIndex + k] = lodGeometry.index.array[k] + positionIndex;
+          }
+          indexIndex += lodGeometry.index.array.length;
+        }
+        this.geometryRegistry.set(i, geometryRegistryArray);
+
+        const lod0Geometry = lodGeometries[0];
+        positionIndex += lod0Geometry.attributes.position.array.length / 3;
+      }
+      geometry.setIndex(new THREE.BufferAttribute(index, 1));
+    }
+
+    this.geometry = geometry;
+
+    // console.log('set geometries', geometry, Array.from(this.geometryRegistry.values()));
+  }
+  allocDrawCall(geometryIndex, lodIndex, instanceCount, boundingObject) {
     const freeListEntry = this.freeList.alloc(1);
     const drawCall = new DrawCallBinding(geometryIndex, freeListEntry, this);
 
-    const geometrySpec = this.geometryRegistry[geometryIndex];
+    const geometrySpec = this.geometryRegistry.get(geometryIndex)[lodIndex];
     const {
       index: {
         start,
@@ -379,7 +449,7 @@ export class InstancedGeometryAllocator {
 
     this.drawStarts[freeListEntry] = start * this.geometry.index.array.BYTES_PER_ELEMENT;
     this.drawCounts[freeListEntry] = count;
-    this.drawInstanceCounts[freeListEntry] = 0;
+    this.drawInstanceCounts[freeListEntry] = instanceCount;
     if (this.boundingType === 'sphere') {
       boundingObject.center.toArray(this.boundingData, freeListEntry  * 4);
       this.boundingData[freeListEntry * 4 + 3] = boundingObject.radius;
@@ -412,7 +482,7 @@ export class InstancedGeometryAllocator {
 
     this.freeList.free(freeListEntry);
   }
-  getInstanceCount(drawCall) {
+  /* getInstanceCount(drawCall) {
     return this.drawInstanceCounts[drawCall.freeListEntry];
   }
   setInstanceCount(drawCall, instanceCount) {
@@ -423,7 +493,7 @@ export class InstancedGeometryAllocator {
   }
   decrementInstanceCount(drawCall) {
     this.drawInstanceCounts[drawCall.freeListEntry]--;
-  }
+  } */
   getTexture(name) {
     return this.textures[name];
   }
@@ -442,7 +512,7 @@ export class InstancedGeometryAllocator {
         multiDrawStarts[i] = this.drawStarts[i];
         multiDrawCounts[i] = this.drawCounts[i];
         
-        if (this.instanceBoundingType) {
+        /* if (this.instanceBoundingType) {
           const startOffset = i * this.maxInstancesPerDrawCall;
 
           // arrange the instanced draw list :
@@ -466,9 +536,9 @@ export class InstancedGeometryAllocator {
           }
 
           multiDrawInstanceCounts[i] = instancesToDraw;
-        } else {
+        } else { */
           multiDrawInstanceCounts[i] = this.drawInstanceCounts[i];
-        }
+        // }
       } else {
         multiDrawStarts[i] = 0;
         multiDrawCounts[i] = 0;
