@@ -39,6 +39,7 @@ import npcManager from '../../../npc-manager';
 
 import { AccountContext } from '../../hooks/web3AccountProvider';
 import { ChainContext } from '../../hooks/chainProvider';
+import loadoutManager from '../../../loadout-manager';
 
 //
 
@@ -55,6 +56,7 @@ const _startApp = async ( weba, canvas ) => {
     await weba.startLoop();
 
     await npcManager.initDefaultPlayer();
+    loadoutManager.initDefault();
 
 };
 
@@ -295,16 +297,6 @@ export const App = () => {
     }, [] );
 
     useEffect( _loadUrlState, [] );
-
-    useEffect( () => {
-
-        if ( canvasRef.current ) {
-
-            _startApp( app, canvasRef.current );
-
-        }
-
-    }, [ canvasRef ] );
 
     //
 
