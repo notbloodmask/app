@@ -83,7 +83,6 @@ export function applyCharacterActionsToAvatar(character, rig) {
   const landAction = character.getAction('land');
   const flyAction = character.getAction('fly');
   const swimAction = character.getAction('swim');
-  const swimmingOnSurface = swimAction?.onSurface;
   const useAction = character.getAction('use');
   const pickUpAction = character.getAction('pickUp');
   const narutoRunAction = character.getAction('narutoRun');
