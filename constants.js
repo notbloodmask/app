@@ -199,3 +199,14 @@ export const defaultWorldSeed = 100;
 export const minAvatarQuality = 1;
 export const maxAvatarQuality = 4;
 export const defaultAvatarQuality = 3;
+
+const comboAnimations = new Map();
+comboAnimations.set('swordSideSlash', 1.6666666269302368);
+comboAnimations.set('swordSideSlashStep', 1);
+comboAnimations.set('swordTopDownSlash', 0.9333333373069763);
+comboAnimations.set('swordTopDownSlashStep', 1);
+comboAnimations.set('combo', 4.5333333015441895);
+
+export const getAnimationDuration = name => {
+  return comboAnimations.get(name);
+}

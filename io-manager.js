@@ -304,6 +304,17 @@ const _updateIo = timeDiff => {
       }
       ioManager.lastCtrlKey = ioManager.keys.ctrl;
     }
+
+    const useAction = localPlayer.getAction('use');
+    const hurtAction = localPlayer.hasAction('hurt');
+    const isUsingSwords = useAction?.animation || useAction?.animationCombo?.length > 0;
+    if (keysDirection.length() > 0 && physicsScene.getPhysicsEnabled() && movementEnabled && !hurtAction && !isUsingSwords) {
+      localPlayer.characterPhysics.applyWasd(
+        keysDirection.normalize()
+          .multiplyScalar(game.getSpeed() * timeDiff)
+      );
+    }
+
     if (physicsScene.getPhysicsEnabled() && movementEnabled) {
       if(scene2DManager.enabled) {
         // restricts movement, it would be better to do an axis lock in physx but that doesn't work right now.

@@ -19,6 +19,8 @@ import validEmotionMapping from './validEmotionMapping.json';
 import metaversefile from './metaversefile-api.js';
 import {runSpeed, walkSpeed} from './constants.js';
 import {characterSelectManager} from './characterselect-manager.js';
+import { NpcLoadoutManager } from './loadout-manager.js';
+import { getAnimationDuration } from './constants.js';
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
@@ -109,6 +111,8 @@ class NpcManager extends EventTarget {
     if (matrixNeedsUpdate) {
       npcPlayer.updateMatrixWorld();
     }
+
+    npcPlayer.loadoutmanager = new NpcLoadoutManager(npcPlayer);
 
     await npcPlayer.setAvatarUrl(avatarUrl);
     npcPlayer.updateAvatar(0, 0);
@@ -472,6 +476,160 @@ class NpcManager extends EventTarget {
 
     // load
     if (mode === 'attached') {
+      //--
+      const _listenEvents = () => {
+        app.addEventListener('hit', e => {
+          if (!npcPlayer.hasAction('hurt')) {
+            const newAction = {
+              type: 'hurt',
+              animation: 'pain_back',
+            };
+            // console.log('add hurtAction', 'npc-manager.js')
+            npcPlayer.addAction(newAction);
+            // console.log('remove use', 'npc-manager.js')
+            npcPlayer.removeAction('use'); // todo: setControlAction() ?
+
+            setTimeout(() => {
+              npcPlayer.removeAction('hurt');
+            }, 500);
+          }
+        })
+
+        const activate = () => {
+          if (targetSpec?.object !== localPlayer) {
+            targetSpec = {
+              type: 'follow',
+              object: localPlayer,
+            };
+          } else {
+            targetSpec = null;
+          }
+        };
+        app.addEventListener('activate', activate);
+
+        let lastSwordActionTime = 0;
+        let lastUseIndex = 0;
+
+        const _getNextUseIndex = animationCombo => {
+          if (Array.isArray(animationCombo)) {
+            return (lastUseIndex++) % animationCombo.length;
+          } else {
+            return 0;
+          }
+        }
+
+        const addSwordAction = (timestamp) => {
+          const wearApp = npcPlayer.loadoutmanager.getSelectedApp();
+          if(wearApp) {
+            const useComponent = wearApp.getComponent('use');
+            if (useComponent) {
+              const useAction = npcPlayer.getAction('use');
+              if (!useAction) {
+                const {instanceId} = wearApp;
+                const {boneAttachment, animation, animationCombo, animationEnvelope, ik, behavior, position, quaternion, scale} = useComponent;
+                const index = _getNextUseIndex(animationCombo);
+                const newUseAction = {
+                  type: 'use',
+                  instanceId,
+                  animation,
+                  animationCombo,
+                  animationEnvelope,
+                  ik,
+                  behavior,
+                  boneAttachment,
+                  index,
+                  position,
+                  quaternion,
+                  scale,
+                };
+                npcPlayer.addAction(newUseAction);
+                wearApp.use();
+                lastSwordActionTime = timestamp;
+              }
+            }
+          }
+        };
+        const removeSwordAction = () => {
+          const useAction = npcPlayer.getAction('use');
+          if(useAction) {
+            const app = npcPlayer.loadoutmanager.getSelectedApp();
+            app.dispatchEvent({
+              type: 'use',
+              use: false,
+            });
+            npcPlayer.removeAction('use');
+          }
+        };
+
+        const slowdownFactor = 0.4;
+        const walkSpeed = 0.075 * slowdownFactor;
+        const runSpeed = walkSpeed * 8;
+        const speedDistanceRate = 0.07;
+        const attackDistance = 1.5;
+        const swordActionDuration = 500;
+
+        const frame = e => {
+          if (npcPlayer) {
+            const {timestamp, timeDiff} = e.data;
+
+            if (targetSpec) {
+              const target = targetSpec.object;
+              const v = localVector.setFromMatrixPosition(target.matrixWorld)
+                .sub(npcPlayer.position);
+              v.y = 0;
+              const distance = v.length();
+              // console.log(distance);
+              if (targetSpec.type === 'moveto' && distance < 2) {
+                targetSpec = null;
+              } else {
+                const hurtAction = npcPlayer.getAction('hurt');
+                const useAction = npcPlayer.getAction('use');
+                if (!hurtAction) {
+                  if(distance <= attackDistance) {
+                      addSwordAction(timestamp);
+                  } else if(!useAction) {
+                    const speed = Math.min(Math.max(walkSpeed + ((distance - 0.5) * speedDistanceRate), 0), runSpeed);
+                    v.normalize()
+                      .multiplyScalar(speed * timeDiff);
+                    npcPlayer.characterPhysics.applyWasd(v);
+                  }
+                }
+                if(useAction?.animationCombo?.length > 0
+                  && timestamp > lastSwordActionTime + swordActionDuration) {
+                  removeSwordAction();
+                } else if(useAction?.animation
+                  && timestamp > lastSwordActionTime + getAnimationDuration(useAction.animation) * 1000) {
+                  removeSwordAction();
+                }
+              }
+            }
+
+            npcPlayer.eyeballTarget.copy(localPlayer.position);
+            npcPlayer.eyeballTargetEnabled = true;
+
+            /* if (isNaN(npcPlayer.position.x)) {
+              debugger;
+            } */
+            npcPlayer.updatePhysics(timestamp, timeDiff);
+            /* if (isNaN(npcPlayer.position.x)) {
+              debugger;
+            } */
+            npcPlayer.updateAvatar(timestamp, timeDiff);
+            /* if (isNaN(npcPlayer.position.x)) {
+              debugger;
+            } */
+          }
+        };
+        world.appManager.addEventListener('frame', frame);
+
+        cancelFns.push(() => {
+          // app.removeEventListener('hittrackeradded', hittrackeradd); // listener and handler added nowhere
+          app.removeEventListener('activate', activate);
+          world.appManager.removeEventListener('frame', frame);
+        });
+      };
+      _listenEvents();
+      //--
       // load json
       const res = await fetch(srcUrl);
       json = await res.json();

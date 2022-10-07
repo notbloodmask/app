@@ -31,6 +31,7 @@ import {
   walkSpeed,
   crouchSpeed,
   flySpeed,
+  getAnimationDuration,
 } from './constants.js';
 import metaversefileApi from './metaversefile-api.js';
 import loadoutManager from './loadout-manager.js';
@@ -59,6 +60,11 @@ const localRay = new THREE.Ray();
 
 const physicsScene = physicsManager.getScene();
 let isMouseUp = false;
+
+const defaultDamageBoxSize = [0.21, 1.22, 0.03];
+const defaultDamageBoxPosition = [0, 0.86, 0];
+const defaultDamageBoxQuaternion = [0, 0, 0, 1];
+let needContinueCombo = false;
 
 // const zeroVector = new THREE.Vector3(0, 0, 0);
 // const oneVector = new THREE.Vector3(1, 1, 1);
@@ -452,27 +458,50 @@ const _startUse = () => {
         localPlayer.addAction(newUseAction);
 
         wearApp.use();
+
+        if (
+          animationCombo?.length > 0 &&
+          localPlayer.avatar?.moveFactors?.walkRunFactor >= 1
+        ) {
+          localPlayer.addAction({type: 'dashAttack'});
+          localVector.copy(cameraManager.lastNonzeroDirectionVectorRotated).setY(0)
+            .normalize()
+            .multiplyScalar(10);
+          localPlayer.characterPhysics.applyWasd(localVector);
+        }
       }
     }
   }
 };
-const _endUse = () => {
-  const localPlayer = playersManager.getLocalPlayer();
-  const useAction = localPlayer.getAction('use');
+const _endUse = player => {
+  const useAction = player.getAction('use');
   if (useAction) {
     const app = metaversefileApi.getAppByInstanceId(useAction.instanceId);
     app.dispatchEvent({
       type: 'use',
       use: false,
     });
-    localPlayer.removeAction('use');
+    player.removeAction('use');
   }
 };
 const _mousedown = () => {
+  const localPlayer = metaversefileApi.useLocalPlayer();
+  const useAction = localPlayer.getAction('use');
+  if (useAction?.animationCombo?.length > 0 && useAction.index < useAction.animationCombo.length - 1) {
+    needContinueCombo = true;
+  }
   _startUse();
 };
 const _mouseup = () => {
-  isMouseUp = true;
+  const localPlayer = metaversefileApi.useLocalPlayer();
+  const useAction = localPlayer.getAction('use');
+  if (!(
+    useAction?.animation ||
+    useAction?.animationCombo?.length > 0
+  )) {
+    _endUse(localPlayer);
+  }
+  // isMouseUp = true;
 };
 
 const hitRadius = 1;
@@ -964,28 +993,37 @@ const _gameUpdate = (timestamp, timeDiff) => {
   };
   _updateThrow();
 
-  const _updateBehavior = () => {
-    const useAction = localPlayer.getAction('use');
+  const _updateBehavior = player => {
+    const useAction = player.getAction('use');
     if (useAction) {
       const _handleSword = () => {
-        localVector
-          .copy(localPlayer.position)
-          .add(
-            localVector2
-              .set(0, 0, -hitboxOffsetDistance)
-              .applyQuaternion(localPlayer.quaternion),
-          );
+        const wearApp = player.appManager.getAppByInstanceId(useAction.instanceId);
 
-        localPlayer.characterHitter.attemptHit({
-          type: 'sword',
-          args: {
-            hitRadius,
-            hitHalfHeight,
-            position: localVector,
-            quaternion: localPlayer.quaternion,
-          },
-          timestamp,
-        });
+        if (wearApp && player.avatar?.useTime > 100) {
+          const useComponent = wearApp.getComponent('use');
+          if (useComponent) {
+            const damageBoxSize = useComponent.damageBoxSize ?? defaultDamageBoxSize;
+            const damageBoxPosition = useComponent.damageBoxPosition ?? defaultDamageBoxPosition;
+            const damageBoxQuaternion = useComponent.damageBoxQuaternion ?? defaultDamageBoxQuaternion;
+            const sizeXHalf = damageBoxSize[0] / 2;
+            const sizeYHalf = damageBoxSize[1] / 2;
+            const sizeZHalf = damageBoxSize[2] / 2;
+            localQuaternion.fromArray(damageBoxQuaternion).multiply(wearApp.quaternion);
+            localVector.copy(wearApp.position).add(localVector2.fromArray(damageBoxPosition).applyQuaternion(localQuaternion));
+
+            player.characterHitter.attemptHit({
+              type: 'sword',
+              args: {
+                sizeXHalf,
+                sizeYHalf,
+                sizeZHalf,
+                position: localVector,
+                quaternion: localQuaternion,
+              },
+              timestamp,
+            });
+          }
+        }
       };
 
       switch (useAction.behavior) {
@@ -999,7 +1037,10 @@ const _gameUpdate = (timestamp, timeDiff) => {
       }
     }
   };
-  _updateBehavior();
+  _updateBehavior(localPlayer);
+  for(const npc of npcManager.npcs) {
+    _updateBehavior(npc);
+  }
 
   const _updateLook = () => {
     if (localPlayer.avatar) {
@@ -1046,21 +1087,51 @@ const _gameUpdate = (timestamp, timeDiff) => {
     crosshairEl.style.visibility = visible ? null : 'hidden';
   }
 
-  const _updateUse = () => {
-    const useAction = localPlayer.getAction('use');
+  const _updateUse = player => {
+    const useAction = player.getAction('use');
     if (useAction) {
       if (useAction.animation === 'pickUpThrow') {
-        const useTime = localPlayer.actionInterpolants.use.get();
+        const useTime = player.actionInterpolants.use.get();
         if (useTime / 1000 >= throwAnimationDuration) {
-          _endUse();
+          _endUse(player);
         }
       } else if (isMouseUp) {
-        _endUse();
+        _endUse(player);
+      }
+      if(useAction.animationCombo?.length > 0) {
+        const useTime = player.actionInterpolants.use.get();
+        if (useTime >= 500) {
+          _endUse(player);
+        }
+      } else if(useAction?.animation) {
+        const useTime = player.actionInterpolants.use.get();
+        if(useTime > getAnimationDuration(useAction.animation) * 1000) {
+          _endUse(player);
+        }
       }
     }
     isMouseUp = false;
   };
-  _updateUse();
+  _updateUse(localPlayer);
+
+  const _updateUseNpc = player => {
+    const useAction = player.getAction('use');
+    if(useAction?.animationCombo?.length > 0) {
+      const useTime = player.actionInterpolants.use.get();
+      if (useTime >= 600) {
+        _endUse(player);
+      }
+    } else if(useAction?.animation) {
+      const useTime = player.actionInterpolants.use.get();
+      if(useTime > getAnimationDuration(useAction.animation) * 1000 + 100) {
+        _endUse(player);
+      }
+    }
+  };
+
+  for(const npc of npcManager.npcs) {
+    _updateUseNpc(npc);
+  }
 };
 const _pushAppUpdates = () => {
   world.appManager.pushAppUpdates();
@@ -1307,7 +1378,7 @@ class GameManager extends EventTarget {
           .add(localVector2.set(0, 0.5, -1).applyQuaternion(localPlayer.quaternion)),
         dropDirection: zeroVector, */
       });
-      _endUse();
+      _endUse(localPlayer);
     }
   }
 
