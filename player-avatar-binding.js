@@ -124,14 +124,14 @@ export function applyCharacterActionsToAvatar(character, rig) {
   rig.swimState = !!swimAction;
   rig.swimTime = swimAction ? character.actionInterpolants.swim.get() : -1;
   rig.cellphoneDrawState = !!cellphoneDrawAction;
-  rig.cellphoneDrawTime = cellphoneDrawAction ? player.actionInterpolants.cellphoneDraw.get() : 0;
+  rig.cellphoneDrawTime = cellphoneDrawAction ? character.actionInterpolants.cellphoneDraw.get() : 0;
   rig.cellphoneUndrawState = !!cellphoneUndrawAction;
-  rig.cellphoneUndrawTime = cellphoneUndrawAction ? player.actionInterpolants.cellphoneUndraw.get() : 0;
-  rig.swimUpTime = player.actionInterpolants.swimUp.get();
-  rig.swimDownTime = player.actionInterpolants.swimDown.get();
-  rig.horizontalMovementsTransitionTime = player.actionInterpolants.horizontalMovementsTransition.get();
+  rig.cellphoneUndrawTime = cellphoneUndrawAction ? character.actionInterpolants.cellphoneUndraw.get() : 0;
+  rig.swimUpTime = character.actionInterpolants.swimUp.get();
+  rig.swimDownTime = character.actionInterpolants.swimDown.get();
+  rig.horizontalMovementsTransitionTime = character.actionInterpolants.horizontalMovementsTransition.get();
   rig.swimmingOnSurfaceState = !!swimmingOnSurface;
-  rig.swimmingOnSurfaceTime = player.actionInterpolants.surface.get();
+  rig.swimmingOnSurfaceTime = character.actionInterpolants.surface.get();
 
   const _handleUse = () => {
     if (useAction?.animation) {
