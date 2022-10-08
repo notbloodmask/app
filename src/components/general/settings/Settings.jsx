@@ -59,13 +59,7 @@ export const Settings = () => {
       )}
       onClick={stopPropagation}
     >
-      <div className={styles.closeBtn} onClick={handleCloseBtnClick}>
-        X
-      </div>
-
       <div className={styles.wrapper}>
-        <div className={styles.title}>SETTINGS</div>
-
         <div className={styles.tabs}>
           <div
             className={classNames(

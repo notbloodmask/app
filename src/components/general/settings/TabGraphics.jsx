@@ -212,10 +212,7 @@ export const TabGraphics = ({active}) => {
         />
         <div className={styles.clearfix} />
       </div>
-      <div className={styles.row}>
-        <div className={styles.blockTitle}>Postprocessing</div>
-        <div className={styles.clearfix} />
-      </div>
+      <div className={styles.blockTitle}>Postprocessing</div>
       <div className={styles.row}>
         <div className={styles.paramName}>Enabled</div>
         <Switch
@@ -256,10 +253,7 @@ export const TabGraphics = ({active}) => {
         />
         <div className={styles.clearfix} />
       </div>
-      <div className={styles.row}>
-        <div className={styles.blockTitle}>Character</div>
-        <div className={styles.clearfix} />
-      </div>
+      <div className={styles.blockTitle}>Character</div>
       <div className={styles.row}>
         <div className={styles.paramName}>Character details</div>
         <Switch

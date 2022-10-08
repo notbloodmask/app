@@ -2,6 +2,7 @@ import React from 'react';
 import classNames from 'classnames';
 
 import styles from './switch.module.css';
+import CustomButton from '../../custom-button';
 
 //
 
@@ -20,15 +21,25 @@ export const Switch = ({value, setValue, values, className}) => {
 
   return (
     <div className={classNames(styles.switch, className)}>
-      <div className={styles.left} onClick={handleLeftArrowClick}>
-        &#8592;
-      </div>
+      <CustomButton
+        type="icon"
+        theme="dark"
+        icon="arrowLeft"
+        className={styles.left}
+        onClick={handleLeftArrowClick}
+        size={24}
+      />
       <div className={styles.value} onClick={handleRightArrowClick}>
         {value}
       </div>
-      <div className={styles.right} onClick={handleRightArrowClick}>
-        &#8594;
-      </div>
+      <CustomButton
+        type="icon"
+        theme="dark"
+        icon="arrowRight"
+        className={styles.right}
+        onClick={handleRightArrowClick}
+        size={24}
+      />
     </div>
   );
 };

@@ -21,7 +21,7 @@ import {StoryTime} from './StoryTime';
 import styles from './Header.module.css';
 import {UIMode} from './components/general/ui-mode/index.jsx';
 import {AvatarBox} from './components/general/avatar-box/AvatarBox.jsx';
-import {UserBox} from './components/general/user-box/UserBox.jsx';
+import {UserBox} from './components/general/user-box';
 
 //
 

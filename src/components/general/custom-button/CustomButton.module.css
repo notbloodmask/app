@@ -68,7 +68,7 @@
 }
 
 .iconButtonWrap:active .buttonBackgroundColor {
-    fill: #FFC000 !important;
+    fill: #fdc503 !important;
 }
 
 .iconButtonWrap:active .innerBackgroundColor {
@@ -76,7 +76,7 @@
 }
 
 .iconButtonWrap:active .icon * {
-    fill: #FFC000;
+    fill: #fdc503;
 }
 
 .buttonWrap {

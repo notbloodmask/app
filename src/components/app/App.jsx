@@ -49,6 +49,7 @@ import npcManager from '../../../npc-manager';
 import {AccountContext} from '../../hooks/web3AccountProvider';
 import {ChainContext} from '../../hooks/chainProvider';
 import loadoutManager from '../../../loadout-manager';
+import Modals from '../modals';
 
 //
 
@@ -103,7 +104,10 @@ const useWebaverseApp = (() => {
 })();
 
 export const App = () => {
-  const [state, setState] = useState({openedPanel: null});
+  const [state, setState] = useState({
+    openedPanel: null,
+    openedModal: null,
+  });
   const [uiMode, setUIMode] = useState('normal');
 
   const canvasRef = useRef(null);
@@ -280,8 +284,13 @@ export const App = () => {
           uiMode,
           account,
           chain,
+          selectedScene,
+          setSelectedScene,
+          selectedRoom,
+          setSelectedRoom,
         }}
       >
+        <Modals />
         <Header setSelectedApp={setSelectedApp} selectedApp={selectedApp} />
         <DomRenderer />
         <canvas
@@ -292,7 +301,6 @@ export const App = () => {
           ref={canvasRef}
         />
         <Crosshair />
-        <Settings />
         <ClaimsNotification />
         <WorldObjectsList
           setSelectedApp={setSelectedApp}

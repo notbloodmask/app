@@ -147,6 +147,7 @@ export const TabControls = ({active}) => {
         active ? styles.active : null,
       )}
     >
+      <div className={styles.blockTitle}>Gameplay</div>
       <div className={styles.row}>
         <div className={styles.paramName}>Move forward</div>
         <KeyInput
@@ -211,6 +212,7 @@ export const TabControls = ({active}) => {
         />
         <div className={styles.clearfix} />
       </div>
+      <div className={styles.blockTitle}>Hot keys</div>
       <div className={styles.row}>
         <div className={styles.paramName}>Chat</div>
         <KeyInput className={styles.keyInput} value={chat} setValue={setChat} />
@@ -225,7 +227,6 @@ export const TabControls = ({active}) => {
         />
         <div className={styles.clearfix} />
       </div>
-
       <div
         className={classNames(
           styles.applyBtn,

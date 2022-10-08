@@ -23,12 +23,10 @@ sceneNames.forEach(name => {
 export const SceneMenu = ({
   className,
   multiplayerConnected,
-  selectedScene,
   setSelectedScene,
-  selectedRoom,
   setSelectedRoom,
 }) => {
-  const {state, setState} = useContext(AppContext);
+  const {state, setState, selectedScene, selectedRoom} = useContext(AppContext);
   const sceneNameInputRef = useRef(null);
   const [rooms, setRooms] = useState([]);
   const [micEnabled, setMicEnabled] = useState(false);
@@ -54,36 +52,6 @@ export const SceneMenu = ({
 
   const stopPropagation = event => {
     event.stopPropagation();
-  };
-
-  const handleSceneMenuOpen = value => {
-    value =
-      typeof value === 'boolean'
-        ? value
-        : state.openedPanel === 'SceneMenuPanel';
-    setState({openedPanel: value ? null : 'SceneMenuPanel'});
-  };
-
-  const handleSceneSelect = (event, sceneName) => {
-    setState({openedPanel: null});
-
-    sceneName = sceneName ?? event.target.value;
-    setSelectedScene(sceneName);
-    setSceneInputName(sceneName);
-    universe.pushUrl(`/?src=${encodeURIComponent(sceneName)}`);
-  };
-
-  const handleRoomMenuOpen = value => {
-    value =
-      typeof value === 'boolean'
-        ? value
-        : state.openedPanel === 'RoomMenuPanel';
-
-    if (!multiplayerConnected) {
-      setState({openedPanel: value ? null : 'RoomMenuPanel'});
-    } else {
-      universe.pushUrl(`/?src=${encodeURIComponent(selectedScene)}`);
-    }
   };
 
   const handleRoomCreateBtnClick = async () => {
@@ -218,7 +186,7 @@ export const SceneMenu = ({
 
   //
 
-  const sceneName = sceneInputName.replace('.scn', '').replace('./scenes/', '');
+  const sceneName = selectedScene.replace('.scn', '').replace('./scenes/', '');
 
   return (
     <div
@@ -228,15 +196,9 @@ export const SceneMenu = ({
       <div className={styles.leftCorner} />
       <div className={styles.rightCorner} />
       <div className={styles.row}>
-        {/*
-                <div className={ styles.inputWrap } >
-                    <input type="text" className={ styles.input } ref={ sceneNameInputRef } value={ multiplayerConnected ? selectedRoom : sceneInputName } onKeyUp={ handleSceneMenuKeyUp } onFocus={ handleSceneMenuOpen.bind( this, false ) } disabled={ multiplayerConnected } onChange={ handleSceneInputKeyDown } placeholder="Goto..." />
-                    <img src="images/webpencil.svg" className={ classnames( styles.background, styles.green ) } />
-                </div>
-                */}
         <div className={styles.roomName}>
           {sceneName}
-          {multiplayerConnected && ` / ${selectedRoom}`}
+          {selectedRoom && ` / ${selectedRoom}`}
         </div>
         <div className={styles.title}>Your Location</div>
       </div>
