@@ -315,7 +315,7 @@ export const Equipment = () => {
 
   const selectedMenuIndex = mod(faceIndex, 4);
 
-  const open = state.openedPanel === 'CharacterPanel';
+  const open = state.openedPanel === 'CharacterPanell';
 
   const onMouseEnter = object => () => {
     setHoverObject(object);

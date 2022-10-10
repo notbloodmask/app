@@ -293,6 +293,7 @@ export const App = () => {
         <Modals />
         <Header setSelectedApp={setSelectedApp} selectedApp={selectedApp} />
         <DomRenderer />
+
         <canvas
           className={classnames(
             styles.canvas,
