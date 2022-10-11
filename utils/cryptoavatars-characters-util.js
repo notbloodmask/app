@@ -9,14 +9,12 @@ export const cryptoavatarsCharactersUtil = {
   getCryptoAvatarsFilters,
 };
 
-const defaultCollectionAddress = '0xc1def47cf1e15ee8c2a92f4e0e968372880d18d1';
-
+const defaultCollectionName = 'CryptoAvatars';
 async function loadCryptoAvatarsCharacters(
   url = undefined,
   ownership = undefined,
-  collectionAddress = defaultCollectionAddress,
+  collectionName = defaultCollectionName,
   itemsPerPage = 5,
-  walletAddress,
 ) {
   const apiUrl = !url
     ? 'https://api.cryptoavatars.io/v1/nfts/avatars/list?skip=0&limit=' +
@@ -24,19 +22,13 @@ async function loadCryptoAvatarsCharacters(
     : url;
 
   var filter = {
-    collectionAddress,
+    collectionName,
     owner: ownership,
   };
 
-  if (ownership && ownership === 'opensource') {
+  if (ownership && ownership === 'free') {
     filter.owner = undefined;
     filter.license = 'CC0';
-  }
-  if (ownership && ownership === 'all') {
-    filter.owner = undefined;
-  }
-  if (ownership && ownership === 'owned') {
-    filter.owner = walletAddress;
   }
 
   var options = {
@@ -52,7 +44,6 @@ async function loadCryptoAvatarsCharacters(
   try {
     console.log('res launching', filter, options);
     const res = await fetch(apiUrl, options);
-
     if (!res.ok) {
       console.error(
         'Bad response from CA avatars list endpoint',
@@ -60,9 +51,8 @@ async function loadCryptoAvatarsCharacters(
       );
       return;
     }
-
     const caResponse = await res.json();
-    console.log('caRespnose', caResponse);
+    console.log('res', caResponse);
     const avatarsWebaverseFormat = caResponse.nfts.map(avatar => {
       const avatarClass = avatar.metadata.tags
         ? avatar.metadata.tags[0]
@@ -96,7 +86,7 @@ async function loadCryptoAvatarsCharacters(
       },
     };
   } catch (err) {
-    console.error('Error fetching data form CryptoAvatars', err);
+    console.error('Error fetching data from CryptoAvatars', err);
   }
 }
 
@@ -105,34 +95,48 @@ async function getCryptoAvatars(
   ownership,
   collection,
   itemsPerPage,
-  walletAddress,
 ) {
   const caResponse = await loadCryptoAvatarsCharacters(
     url,
     ownership,
     collection,
     itemsPerPage,
-    walletAddress,
   );
   return caResponse;
 }
 
-const cryptoAvatarsFilters = {
-  collections: [
-    {
-      name: 'CryptoAvatars ETH',
-      address: '0xc1def47cf1e15ee8c2a92f4e0e968372880d18d1',
-    },
-    {
-      name: 'CryptoAvatars POLYGON',
-      address: '0xd047666daea0b7275e8d4f51fcff755aa05c3f0a',
-    },
-    {
-      name: 'The User Collection',
-      address: '0x28ccbe824455a3b188c155b434e4e628babb6ffa',
-    },
-  ],
-};
+const cryptoAvatarsFilters = await GetNFTsCollections();
+
+async function GetNFTsCollections() {
+  try {
+    const apiUrlCollections =
+      'https://api.cryptoavatars.io/v1/collections/list?skip=0&limit=20';
+    var options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        accept: 'application/json',
+        'API-KEY':
+          '$2b$10$Yaenvbe2pRfadxqZT0vOHet50SX6NEbdSQ5lrqV.M7on2hRKkCC/6',
+      },
+      body: '{}',
+    };
+    console.log('NFTs collection launching', options);
+    const res = await fetch(apiUrlCollections, options);
+    if (!res.ok) {
+      console.error(
+        'Bad response from CA NFTsCollections list endpoint',
+        res.statusText,
+      );
+      return;
+    } else {
+      const caResponse = await res.json();
+      return caResponse;
+    }
+  } catch (err) {
+    console.error('Error fetching data from NFTsCollections', err);
+  }
+}
 
 async function getCryptoAvatarsFilters() {
   return await cryptoAvatarsFilters;
