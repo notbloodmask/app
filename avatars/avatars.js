@@ -50,6 +50,7 @@ import * as wind from './simulation/wind.js';
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
+const localVector3 = new THREE.Vector3();
 const localQuaternion = new THREE.Quaternion();
 const localQuaternion2 = new THREE.Quaternion();
 const localEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -235,9 +236,9 @@ const _makeDebugMesh = avatar => {
   attributes.Right_ankle.add(attributes.Right_toe);
 
   const mesh = attributes.Root;
-  // const modelBoneToMeshBoneMap = new Map();
+  const modelBoneToMeshBoneMap = new Map();
 
-  /* mesh.wrapToAvatar = avatar => {
+  mesh.wrapToAvatar = avatar => {
     avatar.modelBoneOutputs.Root.updateMatrixWorld();
 
     for (const k in avatar.modelBoneOutputs) {
@@ -261,8 +262,8 @@ const _makeDebugMesh = avatar => {
       );
       modelBoneToMeshBoneMap.set(modelBone, meshBone);
     }
-  }; */
-  /* mesh.setFromAvatar = avatar => {
+  };
+  mesh.setFromAvatar = avatar => {
     for (const k in avatar.modelBoneOutputs) {
       const modelBone = avatar.modelBoneOutputs[k];
 
@@ -291,7 +292,7 @@ const _makeDebugMesh = avatar => {
       meshBone.matrix.decompose(meshBone.position, meshBone.quaternion, meshBone.scale);
     }
     mesh.updateMatrixWorld();
-  }; */
+  };
   /* mesh.serializeSkeleton = () => {
     const buffers = [];
 
@@ -2305,12 +2306,14 @@ class Avatar {
     if (debug.enabled && !this.debugMesh) {
       this.debugMesh = _makeDebugMesh();
       this.debugMesh.wrapToAvatar(this);
-      this.model.add(this.debugMesh);
     }
 
     if (this.debugMesh) {
       if (debug.enabled) {
         this.debugMesh.setFromAvatar(this);
+        if (this.avatarRenderer.currentMesh !== this.debugMesh.parent) {
+          this.avatarRenderer.currentMesh.add(this.debugMesh);
+        }
       }
       this.debugMesh.visible = debug.enabled;
     }
