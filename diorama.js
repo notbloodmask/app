@@ -457,14 +457,15 @@ const autoLights = (() => {
 
   return [ambientLight, directionalLight];
 })();
-/* let sideSceneCompiled = false;
+let sideSceneCompiled = false;
 const _ensureSideSceneCompiled = () => {
   if (!sideSceneCompiled) {
     const renderer = getRenderer();
-    renderer.compileAsync(sideScene);
+    const camera = new THREE.PerspectiveCamera();
+    renderer.compile(sideScene, camera);
     sideSceneCompiled = true;
   }
-}; */
+};
 
 const _makeOutlineRenderTarget = (w, h) =>
   new THREE.WebGLRenderTarget(w, h, {
@@ -492,7 +493,7 @@ const createPlayerDiorama = ({
   autoCamera = true,
   detached = false,
 } = {}) => {
-  // _ensureSideSceneCompiled();
+  _ensureSideSceneCompiled();
 
   const {devicePixelRatio: pixelRatio} = window;
 

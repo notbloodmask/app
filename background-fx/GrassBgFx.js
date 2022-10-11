@@ -45,7 +45,7 @@ vec2 Line(vec2 a, vec2 b, vec2 p, vec2 identity, float sa, float sb)
     vec2 pa = p - a;
     vec2 pb = p - b;
 	vec2 ba = b - a;
-	float t = clamp(dot(pa,ba)/dot(ba,ba), 0.0, 1.0);    
+	float t = clamp(dot(pa,ba)/dot(ba,ba), 0.0, 1.0);
     vec2 pp = a + ba * t;
     vec2 y = vec2(-identity.y, identity.x);
     float cutoff = max(dot(pb, identity), dot(pa, -identity));
@@ -69,25 +69,25 @@ vec3 Background(vec2 uv, vec2 baseDir, float time)
 {
     uv = uv * vec2(.75, .75);
 	vec3 result = mainColor;
-    
+
     vec2 n = vec2(-baseDir.y, baseDir.x);
-    
+
     // result = mix(result, vec3(1.0) - result, Rythm(time));
-    
+
     float lines = texture(iChannel0, vec2(uv.y * 0.1, uv.x *  2.) + vec2(time * 1.35, 0.0)).r;
     result += lines * lines * .75 + lines * lines * lines * .35;
     float amount = smoothstep(.75, .0, abs(dot(uv, n)));
     result = mix(mainColor * 0.25, result, amount);
-    
+
     return result;
 }
 
-vec2 rotateCCW(vec2 pos, float angle) { 
+vec2 rotateCCW(vec2 pos, float angle) {
     float ca = cos(angle),  sa = sin(angle);
-    return pos * mat2(ca, sa, -sa, ca);  
+    return pos * mat2(ca, sa, -sa, ca);
   }
 
-  vec2 rotateCCW(vec2 pos, vec2 around, float angle) { 
+  vec2 rotateCCW(vec2 pos, vec2 around, float angle) {
     pos -= around;
     pos = rotateCCW(pos, angle);
     pos += around;
@@ -97,7 +97,7 @@ vec2 rotateCCW(vec2 pos, float angle) {
   // return 1 if v inside the box, return 0 otherwise
   bool insideAABB(vec2 v, vec2 bottomLeft, vec2 topRight) {
       vec2 s = step(bottomLeft, v) - step(topRight, v);
-      return s.x * s.y > 0.;   
+      return s.x * s.y > 0.;
   }
 
   bool isPointInTriangle(vec2 point, vec2 a, vec2 b, vec2 c) {
@@ -117,7 +117,7 @@ vec2 rotateCCW(vec2 pos, float angle) {
 
     return (u >= 0.) && (v >= 0.) && (u + v < 1.);
   }
-  
+
 float closestPointToPointParameter(vec2 start, vec2 end, vec2 point, bool clampToLine) {
 
     vec2 _startP = point - start;
@@ -162,37 +162,37 @@ void mainImage( out vec4 fragColor, in vec2 mainUv )
     float time = iTime; // -.25 + floor(iTime * 1.1 * 24.0) / 24.0;
     float intro = 1.; // smoothstep(12.85, 13.15, time);
     // vec2 mainUv = fragCoord/iResolution.xy;
-    
+
     vec2 uv = mainUv;
     float frameRate = 24.; // floor((3. + sin(time)) * 3. * 10.) / 10.;
     time = max(floor(time * frameRate)/frameRate, 0.01);
-    
+
     uv.y -= .075;
     uv.x -= sin(time*30.0) * .4;
-    
+
     vec2 baseDir = normalize(vec2(1., 0.));
     vec2 baseDir2 = normalize(vec2(0., 1.));
-    
+
     vec3 col = Background(uv, baseDir, time) * intro;
-    
+
     float spread = .35 + (sin(time * 10.0) * .5 + .5);
     float freq = .6 - (sin(time * 4.0) * .5 + .5) * .2;
-    
-    
+
+
     float offset = 1.0 - (smoothstep(5.0, 7.0, time) * smoothstep( 14.0, 13.0, time));
-    
+
     spread *= offset;
-    
+
    	/* col = Magic(.5, col, uv + vec2(.4, .1) * offset, baseDir2, time, .2, .35, 1.0);
     col = Magic(3.0, col, uv + vec2(.2, .0) * offset, baseDir2, time, .05, .15, .55);
     col = Magic(8.0, col, uv + vec2(.2, -.25) * offset, baseDir2, time, .05, .15, .35);
     col = Magic(10.0, col, uv + vec2(-.15, -.35) * offset, baseDir2, time, .04, .05, .75);
     col = Magic(11.0, col, uv + vec2(-.3, -.15) * offset, baseDir2, time, .04, .05, .75);
     col = Magic(12.0, col, uv, baseDir2, time, spread * .75, freq, 1.0); */
-    
+
     const int numBlades = 20;
     const float fnumBlades = float(numBlades);
-    const float w = 0.01;    
+    const float w = 0.01;
     for (int i = 0; i < numBlades; i++) {
       float fi = float(i);
       vec2 c = vec2(noise(fi/fnumBlades), 0.);
@@ -200,7 +200,7 @@ void mainImage( out vec4 fragColor, in vec2 mainUv )
       float segmentLength = 0.1 + noise(fi/fnumBlades)*0.05;
       float lx = c.x - size*0.5;
       float rx = c.x + size*0.5;
-      
+
       float colorFactor = (0.5 + noise(fi)*0.5) * (0.5 + (1.0 - uv.y) * 0.5);
       colorFactor *= 0.8;
       // vec3 localColor = mix(mainColor * colorFactor, mainColor * 2., max(noise(iTime*2.) - 0.9, 0.)/(1. - 0.9));
@@ -208,7 +208,7 @@ void mainImage( out vec4 fragColor, in vec2 mainUv )
       // float alpha = 0.5 + noise(fi)*0.5;
       // vec3 mixColor = mix(col, localColor, alpha);
       vec3 mixColor = localColor;
-      
+
       int numSegments = int(3. + noise(fi/fnumBlades) * 5.);
       float fnumSegments = float(numSegments);
       vec2 bladePermOffset = getOffset2(0., -2., fnumBlades, fnumSegments) * 0.1;
@@ -217,18 +217,18 @@ void mainImage( out vec4 fragColor, in vec2 mainUv )
       vec2 nextC = c + direction * segmentLength;
       for (int j = 0; j < numSegments; j++) {
         float fj = float(j);
-        
+
         vec2 delta = nextC - c;
         float deltaLength = length(delta);
-        
+
         float t0 = closestPointToPointParameter(c, nextC, mainUv, true);
         float completeFactor = (fj + t0) / fnumSegments;
         completeFactor = clamp(pow(completeFactor, 5.), 0., 1.);
         float currentW = w * (1. - completeFactor);
-        
+
         vec2 ac = c - delta * currentW;
         vec2 anextC = nextC + delta * currentW;
-        
+
         float tUncapped = closestPointToPointParameter(ac, anextC, mainUv, false);
         float t = clamp(tUncapped, 0., 1.);
         vec2 cp = closestPointToPointParameter2(ac, anextC, t);
@@ -242,23 +242,23 @@ void mainImage( out vec4 fragColor, in vec2 mainUv )
               col = mixColor;
           // }
         }
-        
+
         vec2 offset = getOffset2(fi, fj, fnumBlades, fnumSegments) * 0.4;
         direction = normalize(direction + offset + bladePermOffset);
-        
+
         c = nextC;
         nextC = c + direction * segmentLength;
       }
-      
+
       /* vec2 normal = vec2(direction.y, -direction.x);
       if (isPointInTriangle(mainUv, c - normal * w, c + normal * w, nextC)) {
         col = mixColor;
       } */
     }
-    
+
     float distanceToCenter = length(vec2(((mainUv.x-0.5)*2.)+0.5, mainUv.y) - 0.5);
     col.rgb += (0.5-distanceToCenter)*0.5;
-    
+
     float light = noise(iTime);
     float lightPower = clamp(pow(1.0 - mainUv.y, 2.), 0., 1.);
     col = col*(1.-light) + col*lightPower*light;
@@ -321,6 +321,7 @@ class GrassBgFxMesh extends THREE.Mesh {
       alphaToCoverage: true,
     });
     super(fullscreenGeometry, material);
+    material.freeze();
 
     this.frustumCulled = false;
   }
