@@ -5,7 +5,7 @@
     "main": "index.mjs",
     "scripts": {
         "start": "npm run dev",
-        "dev": "sudo $(which node) index.mjs",
+        "dev": "node index.mjs",
         "start-prod": "npm run build && NODE_ENV=production node index.mjs -p",
         "dev-prod": "NODE_ENV=production node index.mjs -p",
         "prod": "sudo $(which node) index.mjs -p",

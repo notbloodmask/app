@@ -1,0 +1,44 @@
+{
+  "objects": [
+    {
+      "type": "application/light",
+      "content": {
+        "lightType": "ambient",
+        "args": [[255, 255, 255], 2]
+      }
+    },
+    {
+    "type": "application/scene2D",
+    "content": {
+        "perspective": "side-scroll",
+        "scrollDirection": "vertical",
+        "cameraMode": "fixed",
+        "viewSize": 19
+      }
+    },
+    {
+      "position": [
+        0,
+        -4,
+        -1
+      ],
+      "scale": [3,3,3],
+      "start_url": "/Assets/raidparty/6.gif",
+      "dynamic": false
+    },
+    {
+      "position": [0,6,0],
+      "start_url": "../metaverse_modules/healthbar/"
+    },
+    {
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "physics": true,
+      "start_url": "/Assets/raid.glb",
+      "dynamic": false
+    }
+  ]
+}
