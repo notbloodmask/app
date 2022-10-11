@@ -16,9 +16,12 @@ class SkyManager extends EventTarget {
     super();
 
     const light = new THREE.DirectionalLight();
-    _addSkyLightToLightManager(light);
 
     this.skyLight = light;
+  }
+
+  initSkyLight() {
+    _addSkyLightToLightManager(this.skyLight);
   }
 
   getSkyLight() {
