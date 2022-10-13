@@ -10,11 +10,13 @@ export const cryptoavatarsCharactersUtil = {
 };
 
 const defaultCollectionName = 'CryptoAvatars';
+
 async function loadCryptoAvatarsCharacters(
   url = undefined,
   ownership = undefined,
   collectionName = defaultCollectionName,
   itemsPerPage = 5,
+  walletAddress,
 ) {
   const apiUrl = !url
     ? 'https://api.cryptoavatars.io/v1/nfts/avatars/list?skip=0&limit=' +
@@ -26,9 +28,15 @@ async function loadCryptoAvatarsCharacters(
     owner: ownership,
   };
 
-  if (ownership && ownership === 'free') {
+  if (ownership && ownership === 'opensource') {
     filter.owner = undefined;
     filter.license = 'CC0';
+  }
+  if (ownership && ownership === 'all') {
+    filter.owner = undefined;
+  }
+  if (ownership && ownership === 'owned') {
+    filter.owner = walletAddress;
   }
 
   var options = {
@@ -44,6 +52,7 @@ async function loadCryptoAvatarsCharacters(
   try {
     console.log('res launching', filter, options);
     const res = await fetch(apiUrl, options);
+
     if (!res.ok) {
       console.error(
         'Bad response from CA avatars list endpoint',
@@ -51,8 +60,9 @@ async function loadCryptoAvatarsCharacters(
       );
       return;
     }
+
     const caResponse = await res.json();
-    console.log('res', caResponse);
+    console.log('caRespnose', caResponse);
     const avatarsWebaverseFormat = caResponse.nfts.map(avatar => {
       const avatarClass = avatar.metadata.tags
         ? avatar.metadata.tags[0]
@@ -86,7 +96,7 @@ async function loadCryptoAvatarsCharacters(
       },
     };
   } catch (err) {
-    console.error('Error fetching data from CryptoAvatars', err);
+    console.error('Error fetching data form CryptoAvatars', err);
   }
 }
 
@@ -95,12 +105,14 @@ async function getCryptoAvatars(
   ownership,
   collection,
   itemsPerPage,
+  walletAddress,
 ) {
   const caResponse = await loadCryptoAvatarsCharacters(
     url,
     ownership,
     collection,
     itemsPerPage,
+    walletAddress,
   );
   return caResponse;
 }
@@ -143,51 +155,41 @@ async function getCryptoAvatarsFilters() {
 }
 
 /*
-
 export enum LicensesEnum {
   CC0,
   CC_BY,
   Redistribution_Prohibited,
   CC_BY_NC_SA
 }
-
 export class FilterNFTsDto {
-
   @ApiProperty({ description: 'Blockchain Network.', required: false, enum: NFTBlockchainNetwork })
   @IsEnum(NFTBlockchainNetwork)
   @IsOptional()
   readonly network: NFTBlockchainNetwork;
-
   @ApiProperty({ description: 'Collection contract address of nft.', required: false, type: 'Ethereum address' })
   @IsEthereumAddress()
   @IsOptional()
   readonly collectionAddress: string;
-
   @ApiProperty({ description: 'NFT collection name.', required: false, type: 'string' })
   @IsString()
   @IsOptional()
   readonly collectionName: string;
-
   @ApiProperty({ description: 'Token ID inside of the blockchain contract.', required: false, type: 'string' })
   @IsString()
   @IsOptional()
   readonly nftId: string;
-
   @ApiProperty({ description: "Creator's wallet.", required: false, type: 'string' })
   @IsString()
   @IsOptional()
   readonly createdBy: string;
-
   @ApiProperty({ description: 'NFT tags.', required: false, type: 'array', items: { type: 'string', }, })
   @IsArray()
   @IsOptional()
   readonly tags: [string];
-
   @ApiProperty({ description: 'Name of the NFT (also partially name).', required: false, type: 'string' })
   @IsString()
   @IsOptional()
   readonly name: string;
-
   @ApiProperty({
     name: 'sort', type: 'object', required: false,
     properties: {
@@ -200,17 +202,13 @@ export class FilterNFTsDto {
     readonly sortField?: string;
     readonly sortOrder?: number;
   };
-
   @ApiProperty({ description: 'Wallet who belongs the NFT.', required: false, })
   @IsEthereumAddress()
   @IsOptional()
   readonly owner: string;
-
   @ApiProperty({ description: 'Use licenses. CC0 for free use.', required: false, enum: LicensesEnum })
   @IsString()
   @IsOptional()
   readonly license: string;
-
 }
-
 */
