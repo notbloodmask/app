@@ -84,7 +84,10 @@ const Character = forwardRef(
           }
         }}
         onClick={e => {
-          if (character.canBeUsed) {
+          if (character.canBeUsed == null) {
+            character.canBeUsed = true;
+          } else character.disabled = !character.canBeUsed;
+          if (!character.disabled) {
             onClick(e);
           }
         }}
